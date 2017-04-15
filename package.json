@@ -1,0 +1,16 @@
+{
+  "name": "smart-bot",
+  "version": "1.0.0",
+  "description": "Smart bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "micro-bot"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "micro-bot": "^1.2.0",
+    "telegraf": "^3.6.7"
+  }
+}
