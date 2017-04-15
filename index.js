@@ -1,90 +1,74 @@
-const Telegraf = require('telegraf')
-const bot = new Telegraf(process.env.BOT_TOKEN)
+var TelegramBot = require('node-telegram-bot-api');
+var Respostas = require('./respostas.js');
+var fs = require('fs');
 
-bot.use(Telegraf.log())
+var token = '331301552:AAGbImT9laYSVR0E_DYJODhA3udoislS1Aw';
+// Setup polling way
+var bot = new TelegramBot(token, {polling: true});
 
-bot.command('onetime', (ctx) => {
-  return ctx.reply('One time keyboard', Markup
-    .keyboard([
-      '/simple',
-      '/inline',
-      '/pyramid'
-    ])
-    .oneTime()
-    .resize()
-    .extra()
-  )
-})
+var chatId;
+bot.onText(/\/info/, function (msg, match) {
+  var fromId = msg.chat.id;
+  bot.sendMessage(fromId, "fromId: "+fromId);
+  bot.sendMessage(fromId, "chatId: "+msg.chat.id);
+  bot.sendMessage(fromId, "isPolling: "+bot.isPolling());
+  bot.sendMessage(fromId, "hasOpenWebHook: "+bot.hasOpenWebHook());
+});
 
-bot.command('custom', (ctx) => {
-  return ctx.reply('Custom buttons keyboard', Markup
-    .keyboard([
-      ['🔍 Search', '😎 Popular'],         // Row1 with 2 button
-      ['☸ Setting', '📞 Feedback'],       // Row2 with 2 button
-      ['📢 Ads', '⭐️ Rate us', '👥 Share'] // Row3 with 3 button
-    ])
-    .oneTime()
-    .resize()
-    .extra()
-  )
-})
 
-bot.command('special', (ctx) => {
-  return ctx.reply('Special buttons keyboard', Extra.markup((markup) => {
-    return markup.resize()
-      .keyboard([
-        markup.contactRequestButton('Send contact'),
-        markup.locationRequestButton('Send location')
-      ])
-  }))
-})
+bot.onText(/\/rem/, function (msg, match) {
+  chatId = msg.from.id;
+  reminder();
+});
 
-bot.command('pyramid', (ctx) => {
-  return ctx.reply('Keyboard wrap', Extra.markup(
-    Markup.keyboard(['one', 'two', 'three', 'four', 'five', 'six'], {
-      wrap: (btn, index, currentRow) => currentRow.length >= (index + 1) / 2
-    })
-  ))
-})
+//manda uma mensagem a cada 24h
+var reminder = function(){
+	setTimeout(function(){
+		if(chatId!=undefined){
+	  		bot.sendMessage(chatId, chatId);
+		}
+	reminder();
+   	}, 1000*60*60*24);
+}
 
-bot.command('simple', (ctx) => {
-  return ctx.replyWithHTML('<b>Coke</b> or <i>Pepsi?</i>', Extra.markup(
-    Markup.keyboard(['Coke', 'Pepsi'])
-  ))
-})
 
-bot.command('inline', (ctx) => {
-  return ctx.reply('<b>Coke</b> or <i>Pepsi?</i>', Extra.HTML().markup((m) =>
-    m.inlineKeyboard([
-      m.callbackButton('Coke', 'Coke'),
-      m.callbackButton('Pepsi', 'Pepsi')
-    ])))
-})
+// Matches /echo [whatever]
+bot.onText(/\/echo (.+)/, function (msg, match) {
+  var fromId = msg.chat.id;
+  var resp = match[1];
+  bot.sendMessage(fromId, fromId);
+});
 
-bot.command('random', (ctx) => {
-  return ctx.reply('random example',
-    Markup.inlineKeyboard([
-      Markup.callbackButton('Coke', 'Coke'),
-      Markup.callbackButton('Dr Pepper', 'Dr Pepper', Math.random() > 0.5),
-      Markup.callbackButton('Pepsi', 'Pepsi')
-    ]).extra()
-  )
-})
+bot.onText(/\/help/, function (msg, match) {
+  var fromId = msg.chat.id;
+  bot.sendMessage(fromId, Respostas.help);
+});
 
-bot.hears(/\/wrap (\d+)/, (ctx) => {
-  return ctx.reply('Keyboard wrap', Extra.markup(
-    Markup.keyboard(['one', 'two', 'three', 'four', 'five', 'six'], {
-      columns: parseInt(ctx.match[1])
-    })
-  ))
-})
+bot.onText(/\/conta/, function (msg, match) {
+  var fromId = msg.chat.id;
+  bot.sendMessage(fromId, Respostas.conta);
+});
 
-bot.action('Dr Pepper', (ctx, next) => {
-  return ctx.reply('👍').then(next)
-})
+// match aluguel [nome], se nao houver nome, pega o de todos
+bot.onText(/\/aluguel(.+)*/, function (msg, match) {
+  var fromId = msg.chat.id;
+  var resp = match[1]
+  if(resp!=undefined){
+    resp = resp.toLowerCase().trim();
+    resp = Respostas[resp];
+  }else{
+    resp = Respostas["alexandre"]+Respostas["bexiga"]+Respostas["montanha"]+Respostas["doug"];
+  }
+  bot.sendMessage(fromId, resp);
+});
 
-bot.action(/.+/, (ctx) => {
-  return ctx.answerCallbackQuery(`Oh, ${ctx.match[0]}! Great choise`)
-})
+// envia a foto do seu barriga hahahahahah
+bot.onText(/\/cobrar/, function (msg, match) {
+  var fromId = msg.chat.id;
+  bot.sendPhoto(fromId, Respostas.cobrar, {caption: 'Pague o aluguel!'});
+});
 
-bot.startPolling()
+bot.onText(/(b|B)om dia/, function (msg, match) {
+  var fromId = msg.chat.id;
+  bot.sendMessage(fromId, Respostas.bom_dia);
+});
