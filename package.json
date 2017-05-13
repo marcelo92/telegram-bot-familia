@@ -8,14 +8,13 @@
     "start": "micro-bot"
   },
   "repository": {
-     "type": "git",
-     "url": "https://github.com/marcelo92/telegram-bot-familia"
+    "type": "git",
+    "url": "https://github.com/marcelo92/telegram-bot-familia"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "firebase": "^3.9.0",
-    "micro-bot": "^1.2.0",
-    "telegraf": "^3.6.7"
+    "firebase-admin": "^4.2.1"
   }
 }
