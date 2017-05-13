@@ -8,15 +8,13 @@ var bot;
 //token do telegram
 const token = process.env.BOT_TOKEN;
 if (process.env.NODE_ENV === 'production') {
-  const webHook = { port: process.env.PORT || 443 };
-  const url = process.env.APP_URL || 'Your App URL.';
-  bot = new TelegramBot(token, {																																																							webHook});
+  const webHook = { port: 443 };
+  const url = process.env.APP_URL;
+  bot = new TelegramBot(token, {webHook});
   bot.setWebHook(`${url}/bot${token}`); // In here for setting webHook
 } else {
   bot = new TelegramBot(token, { polling: true }); // On devlopment mode
 }
-// Setup polling way
-var bot = new TelegramBot(token, {polling: true});
 
 
 /*=============INICIALIZAÇÃO DO DB (firebase)=============*/
