@@ -4,8 +4,20 @@ var firebase = require("firebase");
 var admin = require("firebase-admin");
 var serviceAccount = require("./firebase-key.json");
 
+var bot;
 //token do telegram
-var token = process.env.BOT_TOKEN;
+const token = process.env.BOT_TOKEN;
+if (process.env.NODE_ENV === 'production') {
+  const webHook = { port: process.env.PORT || 443 };
+  const url = process.env.APP_URL || 'Your App URL.';
+  bot = new TelegramBot(token, {																																																							webHook});
+  bot.setWebHook(`${url}/bot${token}`); // In here for setting webHook
+} else {
+  bot = new TelegramBot(token, { polling: true }); // On devlopment mode
+}
+// Setup polling way
+var bot = new TelegramBot(token, {polling: true});
+
 
 /*=============INICIALIZAÇÃO DO DB (firebase)=============*/
 //objetos do banco, acessar os dados atraves deles
@@ -21,22 +33,26 @@ var db = app.database();
 var root = db.ref();
 
 //pega as referencias das respostas e moradores, atualiza quando são modificadas
-var moradoresRef = root.child("moradores").on("value", function(snapshot){
+var moradoresRef = root.child("moradores");
+moradoresRef.on("value", function(snapshot){
 	moradores = snapshot.val();
 });
 root.child("respostas").on("value", function(snapshot){
 	respostas = snapshot.val();
 });
-root.child("lista").on("child_added", function(snapshot, prevKey){
-	lista.push(snapshot.val());
+var listaRef = root.child("lista");
+listaRef.on("child_added", function(snapshot, prevKey){
+	lista.push({'key': snapshot.key, 'value': snapshot.val()});
 });
-root.child("lista").on("child_removed", function(snapshot, prevKey){
-	lista.push(snapshot.val());
+listaRef.on("child_removed", function(snapshot, prevKey){
+	for(var i = 0; i < lista.length; i++) {
+	    if(lista[i].key == snapshot.key) {
+		lista.splice(i, 1);
+		break;
+	    }
+	}
 });
 /*=============/INICIALIZAÇÃO DO DB (firebase)=============*/
-
-// Setup polling way
-var bot = new TelegramBot(token, {polling: true});
 
 var chatId;
 bot.onText(/\/info/, function (msg, match) {
@@ -56,7 +72,7 @@ bot.onText(/\/echo (.+)/, function (msg, match) {
 
 bot.onText(/\/help/, function (msg, match) {
   var fromId = msg.chat.id;
-  bot.sendMessage(fromId, respostas.conta);
+  bot.sendMessage(fromId, respostas.help);
 });
 
 bot.onText(/\/conta/, function (msg, match) {
@@ -104,4 +120,49 @@ bot.onText(/\/cobrar/, function (msg, match) {
 bot.onText(/(b|B)om dia/, function (msg, match) {
   var fromId = msg.chat.id;
   bot.sendMessage(fromId, respostas.bomdia);
+});
+
+bot.onText(/\/add (.+)*/, function(msg, match){
+  var fromId = msg.chat.id;
+  var item = match[1].toLowerCase().trim();
+  listaRef.push().set(item);
+  console.log("=========================================");
+  console.log(lista[0]);
+  var resp = lista.map(function(elem){
+    return elem.value;
+  }).join("\n");
+
+  bot.sendMessage(fromId, "Item "+lista.length+") "+item+" adicionado");
+});
+
+bot.onText(/\/lista/, function(msg, match){
+  var fromId = msg.chat.id;
+  var count = 0;
+  if(lista.length==0){
+    bot.sendMessage(fromId, "Lista vazia");
+    return;
+  }
+  var resp = lista.map(function(elem){
+    count++;
+    return count+") "+elem.value;
+  }).join("\n");
+  bot.sendMessage(fromId, resp);
+});
+
+bot.onText(/\/remove (\d+)/, function(msg, match){
+  var fromId = msg.chat.id;
+  var item = match[1];
+  if(isNaN(item)){
+    bot.sendMessage(fromId, "Escolher o item a remover pelo numero. Ex. /remove 3"); 
+    return;   
+  }
+  if(item==0 || item>lista.length){
+    bot.sendMessage(fromId, "Numero inválido"); 
+    return;   
+  }
+  item--;
+  var name = lista[item].value;
+  listaRef.child(lista[item].key).remove();
+ 
+  bot.sendMessage(fromId, "Removido: "+name);
 });
