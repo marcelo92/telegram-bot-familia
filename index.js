@@ -1,5 +1,4 @@
 var TelegramBot = require('node-telegram-bot-api');
-var Respostas = require('./respostas.js');
 var firebase = require("firebase");
 var admin = require("firebase-admin");
 var serviceAccount = require("./firebase-key.json");
@@ -75,7 +74,7 @@ bot.onText(/\/help/, function (msg, match) {
 
 bot.onText(/\/conta/, function (msg, match) {
   var fromId = msg.chat.id;
-  bot.sendMessage(fromId, Respostas.conta);
+  bot.sendMessage(fromId, respostas.conta);
 });
 
 bot.onText(/\/set (\w+) (\d+)/, function (msg, match) {
